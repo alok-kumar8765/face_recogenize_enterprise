@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Blink Detection</title>
+</head>
+<body>
+
+<h2>Blink to Verify</h2>
+<video id="video" autoplay></video>
+<p id="status">Waiting for blink...</p>
+
+<script>
+let state = { counter: 0, blinks: 0 };
+const video = document.getElementById('video');
+const status = document.getElementById('status');
+
+navigator.mediaDevices.getUserMedia({ video: true })
+  .then(s => video.srcObject = s);
+
+setInterval(() => {
+  const c = document.createElement('canvas');
+  c.width = video.videoWidth;
+  c.height = video.videoHeight;
+  c.getContext('2d').drawImage(video, 0, 0);
+
+  fetch('/exam/liveness/', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      image: c.toDataURL('image/jpeg'),
+      state: state
+    })
+  })
+  .then(r => r.json())
+  .then(d => {
+    state = d.state;
+    status.innerText = d.blink_detected
+      ? '✅ Blink detected'
+      : '👀 Blink naturally...';
+  });
+}, 1200);
+</script>
+
+</body>
+</html>

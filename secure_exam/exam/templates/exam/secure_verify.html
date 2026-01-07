@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Secure Exam Verification</title>
+  <style>
+    body { font-family: Arial; background: #f4f4f4; text-align: center; }
+    .box { background: #fff; width: 420px; margin: auto; padding: 25px; border-radius: 10px; }
+    video { border-radius: 10px; border: 2px solid #222; }
+    .step { font-size: 18px; margin: 6px; }
+    .ok { color: green; font-weight: bold; }
+    .wait { color: #666; }
+    .fail { color: red; font-weight: bold; }
+  </style>
+</head>
+
+<body>
+<div class="box">
+  <h2>Secure Exam Verification</h2>
+
+  <input id="reg" placeholder="Registration ID" />
+  <br><br>
+  <video id="video" width="320" height="240" autoplay muted></video>
+
+  <div class="step" id="blink">⭕ Blink</div>
+  <div class="step" id="head">⭕ Head Movement</div>
+  <div class="step" id="face">⭕ Face Match</div>
+
+  <p id="status">Waiting…</p>
+</div>
+
+<script>
+let video = document.getElementById("video");
+let state = null;
+
+navigator.mediaDevices.getUserMedia({video:true})
+  .then(s => video.srcObject = s);
+
+setInterval(() => {
+  if (!video.videoWidth) return;
+  const reg = document.getElementById("reg").value;
+  if (!reg) return;
+
+  const c = document.createElement("canvas");
+  c.width = video.videoWidth;
+  c.height = video.videoHeight;
+  c.getContext("2d").drawImage(video, 0, 0);
+
+  fetch("", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({
+      reg_id: reg,
+      image: c.toDataURL("image/jpeg"),
+      state: state
+    })
+  })
+  .then(r => r.json())
+  .then(d => {
+    state = d.state;
+
+    document.getElementById("blink").className = d.blink ? "step ok" : "step wait";
+    document.getElementById("head").className = d.head ? "step ok" : "step wait";
+    document.getElementById("face").className = d.face ? "step ok" : "step wait";
+
+    document.getElementById("status").innerText = d.message;
+  });
+}, 1200);
+</script>
+</body>
+</html>
