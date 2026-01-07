@@ -1,9 +1,10 @@
 from django.urls import path
 from .views import exam_login, verify_face
 from exam.views.violation import log_violation
-from exam.views.face_verify import face_only_verify
-from exam.views.liveness_blink import blink_only_verify
-from exam.views.combined_verify import face_with_liveness
+from exam.views.face_only import face_only_verify
+from exam.views.face_with_liveness import face_with_liveness
+from exam.views.liveness_only import blink_only_verify
+from exam.views.secure_verify import secure_verify
 
 urlpatterns = [
     path('', exam_login, name='exam_login'),      # GET page
@@ -11,7 +12,7 @@ urlpatterns = [
     
     path('face/', face_only_verify, name='face_only_verify'),
     path('liveness/', blink_only_verify, name='liveness_only'),
-    path('secure/', face_with_liveness, name='face_with_liveness'),
+    path('secure/', secure_verify, name='face_with_liveness'),
    
     path("violation/", log_violation),
 

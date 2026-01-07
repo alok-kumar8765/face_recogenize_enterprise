@@ -128,6 +128,20 @@ document.addEventListener("visibilitychange", () => {
     });
   }
 });
+/* CAMERA OFF DETECTION */
+setInterval(() => {
+  if (
+    video.srcObject &&
+    video.srcObject.getVideoTracks().length > 0 &&
+    video.srcObject.getVideoTracks()[0].readyState !== "live"
+  ) {
+    fetch("/exam/violation/", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ type: "CAMERA_OFF" })
+    });
+  }
+}, 2000);
 </script>
 
 
