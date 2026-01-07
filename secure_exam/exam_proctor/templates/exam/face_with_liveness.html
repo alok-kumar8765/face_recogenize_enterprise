@@ -74,7 +74,7 @@ function sendFrame() {
   canvas.height = video.videoHeight;
   canvas.getContext('2d').drawImage(video, 0, 0);
 
-  fetch('/exam/secure/', {
+  fetch('/exam_proctor/secure/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -118,7 +118,7 @@ document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
     tabViolations++;
 
-    fetch("/exam/violation/", {
+    fetch("/exam_proctor/violation/", {
       method: "POST",
       headers: {"Content-Type":"application/json"},
       body: JSON.stringify({
@@ -135,7 +135,7 @@ setInterval(() => {
     video.srcObject.getVideoTracks().length > 0 &&
     video.srcObject.getVideoTracks()[0].readyState !== "live"
   ) {
-    fetch("/exam/violation/", {
+    fetch("/exam_proctor/violation/", {
       method: "POST",
       headers: {"Content-Type":"application/json"},
       body: JSON.stringify({ type: "CAMERA_OFF" })

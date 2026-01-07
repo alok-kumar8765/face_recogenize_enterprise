@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, include
 from exam_proctor.views import (
     face_only,
     liveness_only,
@@ -15,5 +15,7 @@ urlpatterns = [
     path("violation/", log_violation),
     path("violations/", log_violations),
     path('auth/login/', login, name='login'),
+    path("dashboard/", include("exam_proctor.dashboard.urls"))
+
 
 ]

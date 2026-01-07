@@ -145,6 +145,18 @@ function captureAndSend() {
     .then(res => res.json())
     .then(data => alert(JSON.stringify(data, null, 2)));
 }
+/* detect camera is off */
+setInterval(() => {
+  const track = video.srcObject?.getVideoTracks()?.[0];
+  if (!track || track.readyState !== "live") {
+    fetch("/proctor/violation/", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ type: "CAMERA_OFF" })
+    });
+  }
+}, 2000);
+
 </script>
 
 </body>

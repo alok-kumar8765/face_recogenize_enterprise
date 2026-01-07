@@ -10,6 +10,7 @@ from exam.services.image_decoder import decode_base64_image
 from exam.services.face_matcher import match_face
 from exam.liveness.blink import detect_blink
 from exam.liveness.head_move import detect_head_movement
+from exam_proctor.anti_cheat.multi_face import detect_multiple_faces
 
 
 def convert_state(obj):
@@ -113,6 +114,12 @@ def face_with_liveness(request):
             'state': convert_state(state)
         })
 
+    if detect_multiple_faces(rgb):
+        return JsonResponse({
+        "error": "Multiple faces detected",
+        "terminate": True
+    })
+    
     # ----------------------------
     # STEP 3: FACE MATCH
     # ----------------------------
