@@ -2,6 +2,9 @@
 
 from django.http import JsonResponse
 from exam_proctor.models import Institute
+import redis
+from django.http import JsonResponse
+
 
 class ApiKeyMiddleware:
     def __init__(self, get_response):
@@ -18,10 +21,6 @@ class ApiKeyMiddleware:
         return self.get_response(request)
 
 # exam_proctor/middleware.py
-
-import redis
-from django.http import JsonResponse
-
 r = redis.Redis(host='localhost', port=6379, db=0)
 
 class RateLimitMiddleware:
