@@ -1,0 +1,2 @@
+recursive-include exam_proctor/templates *
+recursive-include exam_proctor/static *

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Exam Face Verification</title>
+</head>
+<body>
+
+<h2>Exam Login</h2>
+<input id="reg_id" placeholder="Registration ID" />
+
+<video id="video" autoplay width="320"></video>
+<canvas id="canvas" style="display:none;"></canvas>
+
+<br>
+<button onclick="verify()">Verify</button>
+
+<script>
+const video = document.getElementById('video');
+navigator.mediaDevices.getUserMedia({ video: true })
+  .then(stream => video.srcObject = stream);
+
+function verify() {
+  const canvas = document.getElementById('canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+
+  fetch('/exam/verify/', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      reg_id: document.getElementById('reg_id').value,
+      image: canvas.toDataURL('image/jpeg')
+    })
+  })
+  .then(r => r.json())
+  .then(d => alert(JSON.stringify(d, null, 2)));
+}
+</script>
+
+</body>
+</html>

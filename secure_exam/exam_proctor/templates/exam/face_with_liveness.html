@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Secure Exam Verification</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'exam/style.css' %}">
+  <style>
+    body { font-family: Arial; background:#2c36c2; text-align:center; padding:50px; }
+    .container { background:#4b7ff0; border-radius:10px; padding:30px; width:450px; margin:0 auto; box-shadow:0 4px 15px rgba(0,0,0,0.2); }
+    input, button { padding:10px; margin:10px 0; width:80%; border-radius:5px; border:1px solid #ccc; font-size:1em; }
+    button { cursor:pointer; background:#4CAF50; color:white; border:none; }
+    button:hover { background:#45a049; }
+    video { border:2px solid #333; border-radius:10px; margin-top:15px; }
+    .steps { margin-top:20px; text-align:left; }
+    .steps p { font-size:1.1em; padding:5px 0; margin:0; border-radius:5px; }
+    .step-default { color:#555; }
+    .step-done { color:green; font-weight:bold; }
+    .step-fail { color:red; font-weight:bold; }
+    #status { margin-top:20px; font-size:1.2em; font-weight:bold; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Secure Exam Verification</h2>
+  <label>Enter Registration ID</label>
+  <input id="reg_id" placeholder="Enter Registration ID">
+  <button id="start">Start Verification</button>
+
+  <div class="video-box">
+    <video id="video" autoplay muted width="320" height="240"></video>
+  </div>
+
+  <div class="steps">
+    <p id="blinkStep" class="step-default">⭕ Blink</p>
+    <p id="headStep" class="step-default">⭕ Head Movement</p>
+    <p id="faceStep" class="step-default">⭕ Face Match</p>
+  </div>
+
+  <p id="status">Waiting…</p>
+</div>
+
+<script>
+const video = document.getElementById('video');
+const statusText = document.getElementById('status');
+
+let state = null;
+let interval = null;
+let regId = null;
+
+navigator.mediaDevices.getUserMedia({ video: true })
+  .then(stream => video.srcObject = stream)
+  .catch(err => alert("Camera access denied: " + err));
+
+document.getElementById('start').onclick = () => {
+  regId = document.getElementById('reg_id').value.trim();
+  if (!regId) return alert("Enter Registration ID");
+
+  state = null;
+  document.getElementById('blinkStep').className = 'step-default';
+  document.getElementById('headStep').className = 'step-default';
+  document.getElementById('faceStep').className = 'step-default';
+  statusText.innerText = "👀 Blink your eyes";
+
+  if(interval) clearInterval(interval);
+  interval = setInterval(sendFrame, 1200);
+};
+
+function sendFrame() {
+  if (!video.videoWidth) return;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+
+  fetch('/exam/secure/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      reg_id: regId,
+      image: canvas.toDataURL('image/jpeg'),
+      state: state
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.error) {
+      statusText.innerText = data.error;
+      return;
+    }
+
+    state = data.state || state;
+    statusText.innerText = data.message;
+
+    // Update steps
+    if(data.step === 'blink') {
+      document.getElementById('blinkStep').innerText = "✅ Blink";
+      document.getElementById('blinkStep').className = 'step-done';
+    }
+    if(data.step === 'head') {
+      document.getElementById('headStep').innerText = "✅ Head Movement";
+      document.getElementById('headStep').className = 'step-done';
+    }
+    if(data.step === 'face') {
+      document.getElementById('faceStep').innerText = data.face_match ? "✅ Face Match" : "❌ Face Mismatch";
+      document.getElementById('faceStep').className = data.face_match ? 'step-done' : 'step-fail';
+      if(data.face_match) clearInterval(interval);
+    }
+  })
+  .catch(err => { statusText.innerText = "Error: " + err; });
+}
+
+/* TAB SWITCH DETECTION */
+let tabViolations = 0;
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    tabViolations++;
+
+    fetch("/exam/violation/", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({
+        type: "TAB_SWITCH",
+        count: tabViolations
+      })
+    });
+  }
+});
+/* CAMERA OFF DETECTION */
+setInterval(() => {
+  if (
+    video.srcObject &&
+    video.srcObject.getVideoTracks().length > 0 &&
+    video.srcObject.getVideoTracks()[0].readyState !== "live"
+  ) {
+    fetch("/exam/violation/", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ type: "CAMERA_OFF" })
+    });
+  }
+}, 2000);
+</script>
+
+
+</body>
+</html>
